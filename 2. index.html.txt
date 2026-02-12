@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>E-Textbook Builder</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- KaTeX для формул -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <!-- Quill.js для редактора -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Боковая панель: дерево учебника -->
+    <div class="sidebar">
+      <h3>Структура учебника</h3>
+      <button id="add-chapter">➕ Добавить главу</button>
+      <ul id="chapter-list"></ul>
+    </div>
+
+    <!-- Основная область: редактор -->
+    <div class="main">
+      <div class="toolbar">
+        <button id="save-btn">💾 Сохранить</button>
+        <button id="export-pdf">📄 Экспорт в PDF</button>
+        <input type="text" id="textbook-title" placeholder="Название учебника" />
+      </div>
+
+      <div id="editor"></div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+const { ipcRenderer } = require('electron');
+const fs = require('fs').promises;
+
+// Инициализация Quill
+const quill = new Quill('#editor', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['link', 'image'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['code-block'],
+      [{ 'align': [] }],
+      ['clean']
+    ]
+  }
+});
+
+// Инициализация KaTeX
+document.addEventListener('DOMContentLoaded', () => {
+  renderMathInElement(document.body, {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false }
+    ],
+    throwOnError: false
+  });
+});
+
+// --- Управление структурой ---
+const chapterList = document.getElementById('chapter-list');
+const textbookTitleInput = document.getElementById('textbook-title');
+let currentProject = {
+  title: '',
+  chapters: []
+};
+
+// Загрузить проект (если есть)
+async function loadProject() {
+  try {
+    const data = await fs.readFile('projects/default.json', 'utf8');
+    currentProject = JSON.parse(data);
+    textbookTitleInput.value = currentProject.title || '';
+    renderChapterList();
+  } catch (err) {
+    console.log('Нет сохранённого проекта. Создаём новый.');
+  }
+}
+
+// Сохранить проект
+async function saveProject() {
+  currentProject.title = textbookTitleInput.value.trim() || 'Без названия';
+  const dir = 'projects';
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(`${dir}/default.json`, JSON.stringify(currentProject, null, 2));
+  alert('Проект сохранён!');
+}
+
+// Добавить главу
+function addChapter() {
+  const chapter = {
+    title: `Глава ${currentProject.chapters.length + 1}`,
+    lessons: []
+  };
+  currentProject.chapters.push(chapter);
+  renderChapterList();
+  quill.setContents([]); // Очистить редактор
+}
+
+// Отобразить дерево глав
+function renderChapterList() {
+  chapterList.innerHTML = '';
+  currentProject.chapters.forEach((chapter, idx) => {
+    const li = document.createElement('li');
+    li.textContent = chapter.title;
+    li.addEventListener('click', () => {
+      // Загрузить первую урок в редакторе
+      if (chapter.lessons.length > 0) {
+        quill.setContents(chapter.lessons[0].content);
+        textbookTitleInput.value = currentProject.title;
+      } else {
+        quill.setContents([]);
+      }
+    });
+    chapterList.appendChild(li);
+  });
+}
+
+// Сохранить текущий контент в активную главу
+function saveCurrentContent() {
+  const activeChapter = currentProject.chapters[0]; // В простом варианте — только первая глава
+  if (!activeChapter) return;
+
+  const content = quill.getContents();
+  if (activeChapter.lessons.length === 0) {
+    activeChapter.lessons.push({ content });
+  } else {
+    activeChapter.lessons[0].content = content;
+  }
+}
+
+// Экспорт в PDF
+async function exportToPDF() {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${currentProject.title}</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+      <style>
+        body { font-family: Arial, sans-serif; padding: 2cm; }
+        .katex-display { margin: 1rem 0; }
+      </style>
+    </head>
+    <body>
+      <h1>${currentProject.title}</h1>
+      ${quill.root.innerHTML}
+    </body>
+    </html>
+  `;
+
+  const { exec } = require('child_process');
+  const puppeteer = require('puppeteer');
+
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.setContent(htmlContent);
+  await page.pdf({ path: 'projects/output.pdf', format: 'A4' });
+  await browser.close();
+
+  alert('PDF экспортирован: projects/output.pdf');
+}
+
+// --- Привязка событий ---
+document.getElementById('add-chapter').addEventListener('click', addChapter);
+document.getElementById('save-btn').addEventListener('click', () => {
+  saveCurrentContent();
+  saveProject();
+});
+document.getElementById('export-pdf').addEventListener('click', exportToPDF);
+
+// Загрузить проект при старте
+loadProject();
+
+// Сохранять при закрытии окна
+window.addEventListener('beforeunload', () => {
+  saveCurrentContent();
+  saveProject();
+});

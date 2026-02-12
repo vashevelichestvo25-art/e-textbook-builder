@@ -1,0 +1,45 @@
+{
+  "name": "e-textbook-builder",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": ["electron", "textbook", "education"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  },
+  "build": {
+    "appId": "com.yourname.e-textbook-builder",
+    "productName": "E-Textbook Builder",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "renderer.js",
+      "styles.css",
+      "assets/**",
+      "projects/**",
+      "node_modules/**"
+    ],
+    "mac": {
+      "icon": "assets/icons/icon.png"
+    },
+    "win": {
+      "icon": "assets/icons/icon.png"
+    },
+    "linux": {
+      "icon": "assets/icons/icon.png"
+    }
+  }
+}
